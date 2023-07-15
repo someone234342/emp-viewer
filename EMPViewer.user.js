@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         EMPViewer
 // @namespace    https://www.empornium.sx/*
-// @version      2.2
+// @version      2.3
 // @description  Better porn browsing
 // @author       someone234342
 // @match        https://www.empornium.sx/*
@@ -15,11 +15,15 @@
 /**
  * Changelog
  * 
+ * 2.3
+ * - feat: added "fewer tags" setting under "preserve tags". Will hide tags that are not highlighted
+ * - fix: minimal mode not hiding tags
+ * 
  * 2.2
- * - add updateURL
+ * - feat: add updateURL
  * 
  * 2.1
- * - Add support for tag-highlighter 0.7 userscript
+ * - feat: Add support for tag-highlighter 0.7 userscript
  * 
  * 2.0
  * - Initial rewrite
@@ -42,6 +46,7 @@
         cats_dislike: '',
 
         preserve_tags: false,
+        fewer_tags: false,
 
         hide_disliked: false,
     };
@@ -250,7 +255,7 @@
 
             // crude update
             for (const key in this.state) {
-                if (key !== 'minimal' && key !== 'cols') {
+                if (['tags_like', 'tags_dislike', 'cats_like', 'cats_dislike'].includes(key) === false) {
                     this.props.updateState(key, this.state[key]);
                 }
             }
@@ -337,11 +342,16 @@
         render() {
             /** @type {Torrent[]} */
             const torrents = this.props.torrents;
+            let className = "torrents"
+
+            if (this.state.preserve_tags) className += ' preserved-tags';
+            if (this.state.fewer_tags) className += ' fewer-tags';
+            if (this.state.minimal) className += ' minimal';
 
             log({ torrents })
 
             return html`
-                <div class="view-controls ${this.state.preserve_tags ? 'preserved-tags': ''}">
+                <div class="view-controls">
                     <div>
                         <input checked=${this.state.minimal} onChange=${(e) => this.updateState('minimal', e.target.checked)} type="checkbox" id="view-minimal" />
                         <label for="view-minimal"> Minimal</label>
@@ -351,6 +361,13 @@
                         <input checked=${this.state.preserve_tags} onChange=${(e) => this.updateState('preserve_tags', e.target.checked)} type="checkbox" id="view-preserve_tags" />
                         <label for="view-preserve_tags"> Preserve Tags</label>
                     </div>
+
+                    ${this.state.preserve_tags && html`
+                        <div>
+                            <input checked=${this.state.fewer_tags} onChange=${(e) => this.updateState('fewer_tags', e.target.checked)} type="checkbox" id="view-fewer_tags" />
+                            <label for="view-fewer_tags"> Fewer tags</label>
+                        </div>
+                    `}
 
                     <div>
                         <input value=${this.state.cols} onChange=${(e) => this.updateState('cols', e.target.value)} type="number" min="0" max="10" id="view-cols" />
@@ -371,11 +388,11 @@
                     </dialog>
                 </div>
 
-                <div class="grid ${this.state.minimal && 'minimal'}">
+                <div class=${className}>
                     ${torrents.map(t => html`<${TorrentCard} ...${{ torrent: t, prefs: this.state }} />`)}
                 </div>
                 <style>
-                    .grid {
+                    .torrents {
                         padding: 10px;
                         display: grid;
                         grid-template-columns: repeat(${this.state.cols}, 1fr);
@@ -398,7 +415,7 @@
         if (disliked && props.prefs.hide_disliked) return null;
 
         return html`
-            <div class="torrent empviewer_card ${(likedTag || likedCat) && 'liked'} ${disliked && 'disliked'}">
+            <div class="torrent empviewer_card ${(likedTag || likedCat) ? 'liked': ''} ${disliked ? 'disliked' : ''}">
                 <div class="card_meta">
                     <div class="card_dl_info">
                         <strong>${torrent.size}</strong>
@@ -541,6 +558,10 @@
                 color: #ddd;
             }
 
+            .minimal .empviewer_card {
+                border-radius: 5px;
+            }
+
             .card_inner {
                 display: flex;
                 overflow: hidden;
@@ -565,13 +586,13 @@
 
             .card_cover {
                 width: 100%;
+                background-color: black;
             }
 
             .card_cover img {
                 width: 100%;
                 height: 100%;
                 object-fit: contain;
-                background-color: black;
             }
 
             .disliked .card_cover img {
@@ -590,7 +611,7 @@
                 display: none;
             }
 
-            .grid .card_cover {
+            .torrents .card_cover {
                 aspect-ratio: 4/3;
             }
 
@@ -708,13 +729,21 @@
             }
 
             .prefs_notice a { text-decoration: underline }
+
+            .minimal .tags { display: none }
+
+            /** effectively any tag without special color will be hidden **/
+            .fewer-tags span[class="s-tag"] {
+                display: none;
+            }
         `
         document.head.appendChild(tag)
     }
 
     /** helpers */
-    function log(str) {
-        console.log(`[EmpViewer] ${str}`);
+    function log(arg) {
+        if (typeof arg === 'string') console.log(`[EmpViewer] ${arg}`);
+        else console.log(`[EmpViewer] `, arg);
     }
     
     function logError(e) {
