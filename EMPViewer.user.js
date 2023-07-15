@@ -1,15 +1,29 @@
 // ==UserScript==
 // @name         EMPViewer
 // @namespace    https://www.empornium.sx/*
-// @version      2.1
+// @version      2.2
 // @description  Better porn browsing
 // @author       someone234342
 // @match        https://www.empornium.sx/*
 // @icon         https://www.empornium.sx/favicon.ico
 // @require      https://cdnjs.cloudflare.com/ajax/libs/preact/10.16.0/preact.min.js
 // @require      https://cdnjs.cloudflare.com/ajax/libs/htm/3.1.1/htm.js
+// @updateURL    https://github.com/someone234342/emp-viewer/raw/main/EMPViewer.user.js
 // @grant        none
 // ==/UserScript==
+
+/**
+ * Changelog
+ * 
+ * 2.2
+ * - add updateURL
+ * 
+ * 2.1
+ * - Add support for tag-highlighter 0.7 userscript
+ * 
+ * 2.0
+ * - Initial rewrite
+ */
 
 (function() {
     'use strict';
